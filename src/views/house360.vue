@@ -94,8 +94,8 @@ export default {
       // this.scene.add(cube);
 
       // 引入6张图片贴在立方体上
-      const arr = ['4_l', '4_r', '4_u', '4_d', '4_b', '4_f'];
-      // const arr = ['4_r', '4_l', '4_u', '4_d', '4_f', '4_b'];
+      // const arr = ['4_l', '4_r', '4_u', '4_d', '4_b', '4_f'];
+      const arr = ['4_r', '4_l', '4_u', '4_d', '4_f', '4_b'];
       let boxMaterials = [];
 
       arr.forEach(item => {

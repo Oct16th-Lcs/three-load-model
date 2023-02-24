@@ -6,15 +6,14 @@
 
 <template>
   <div class="model-wrap">
-    <div class="three-wrap">
-      <div id="container"
-           v-loading="loading"
-           element-loading-text="数据加载中..."
-           element-loading-spinner="el-icon-loading"
-           element-loading-background="rgba(0, 0, 0, 0.5)"
-           @click="onMouseClick"
-      >
-      </div>
+    <div class="three-wrap"
+         v-loading="$store.getters.loading"
+         element-loading-text="数据加载中..."
+         element-loading-spinner="el-icon-loading"
+         element-loading-background="rgba(0, 0, 0, 0.5)"
+    >
+      <house360 v-if="isShow360House" />
+      <div id="container" @click="onMouseClick" v-else></div>
     </div>
     <!--切换盒子-->
     <div class="toggle-wrap">
@@ -34,12 +33,16 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"; //轨道控制器
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"; //模型加载器
+import house360 from "@/views/house360";
 export default {
+  components: {
+    house360
+  },
   data() {
     return {
-      loading: false,
       modelList: [
         {
+          id: '01',
           modelUrl: "model/武士刀.glb",
           title: "武士刀",
           bg: require('@/assets/images/panorama/pImg21.png'),
@@ -60,6 +63,7 @@ export default {
           }
         },
         {
+          id: '02',
           modelUrl: "model/左轮手枪.glb",
           title: "左轮手枪",
           bg: require('@/assets/images/panorama/pImg20.png'),
@@ -80,6 +84,7 @@ export default {
           }
         },
         {
+          id: '03',
           modelUrl: "model/dji-mini-2.glb",
           title: "大疆 Mini 2",
           bg: require('@/assets/images/panorama/pImg8.png'),
@@ -98,6 +103,10 @@ export default {
             y: 150,
             z: 150
           }
+        },
+        {
+          id: '04',
+          title: '全景看房'
         }
       ],
 
@@ -105,6 +114,7 @@ export default {
       camera: null, //相机
       renderer: null, //渲染器
       curActive: 0, // 选择的当前模型
+      isShow360House: false
     }
   },
 
@@ -114,48 +124,49 @@ export default {
 
   methods: {
     init(data) {
-      // 新建场景
-      this.scene = new THREE.Scene();
-      const container = document.getElementById('container');
-      // 场景宽度
-      // let width = container.clientWidth;
-      let width = window.innerWidth;
-      // 场景高度
-      let height = window.innerHeight;
+      this.$nextTick(() => {
+        // 新建场景
+        this.scene = new THREE.Scene();
+        const container = document.getElementById('container');
+        // 场景宽度
+        // let width = container.clientWidth;
+        let width = window.innerWidth;
+        // 场景高度
+        let height = window.innerHeight;
 
-      // 新建透视相机
-      this.camera = new THREE.PerspectiveCamera(75, width / height, 0.01, 1000);
-      // 设置相机的位置
-      this.camera.position.set(data.cameraPosition.x, data.cameraPosition.y, data.cameraPosition.z);
+        // 新建透视相机
+        this.camera = new THREE.PerspectiveCamera(75, width / height, 0.01, 1000);
+        // 设置相机的位置
+        this.camera.position.set(data.cameraPosition.x, data.cameraPosition.y, data.cameraPosition.z);
 
-      //相机观察目标指向Threejs 3D空间中某个位置
-      this.camera.lookAt(0, 0, 0); //坐标原点
+        //相机观察目标指向Threejs 3D空间中某个位置
+        this.camera.lookAt(0, 0, 0); //坐标原点
 
-      this.renderer = new THREE.WebGLRenderer({
-        antialias: true, // 抗锯齿
-        alpha: true
-      });
+        this.renderer = new THREE.WebGLRenderer({
+          antialias: true, // 抗锯齿
+          alpha: true
+        });
 
-      // 设置渲染区域
-      this.renderer.setSize(width, height);
+        // 设置渲染区域
+        this.renderer.setSize(width, height);
 
-      // 设置设备像素比。通常用于避免HiDPI设备上绘图模糊
-      this.renderer.setPixelRatio(window.devicePixelRatio);
-      // 将画布添加到container中
-      container.appendChild(this.renderer.domElement);
+        // 设置设备像素比。通常用于避免HiDPI设备上绘图模糊
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        // 将画布添加到container中
+        container.appendChild(this.renderer.domElement);
 
-      // 坐标系（辅助开发）红色代表 X 轴. 绿色代表 Y 轴. 蓝色代表 Z 轴
-      // const axes = new THREE.AxesHelper(300);
-      // axes.rotation.x = 0.1;
-      // this.scene.add(axes);
+        // 坐标系（辅助开发）红色代表 X 轴. 绿色代表 Y 轴. 蓝色代表 Z 轴
+        // const axes = new THREE.AxesHelper(300);
+        // axes.rotation.x = 0.1;
+        // this.scene.add(axes);
 
-      window.addEventListener( 'resize', this.onWindowResize);
-      this.createPanorama(data.bg);  // 球体全景
-      this.createOrbitControls();
-      this.createLight();
-      this.loadModel(data);
-      this.renderAnimate()
-
+        window.addEventListener( 'resize', this.onWindowResize);
+        this.createPanorama(data.bg);  // 球体全景
+        this.createOrbitControls();
+        this.createLight();
+        this.loadModel(data);
+        this.renderAnimate()
+      })
     },
 
     // 场景球体全景
@@ -183,8 +194,6 @@ export default {
       // 相机距离原点的距离范围
       this.controls.minDistance = 0;
       this.controls.maxDistance = 200;
-      // 滑动阻尼
-      this.controls.enableDamping = true;
       // 当.enableDamping设置为true的时候，阻尼惯性有多大。 默认 0.05.
       // 请注意，要使得这一值生效，你必须在你的动画循环里调用.update()
       this.controls.dampingFactor = 0.1
@@ -211,7 +220,7 @@ export default {
         loader.load(data.modelUrl, gltf => {
           resolve(gltf);
           reject('加载模型失败');
-          this.loading = false;
+          this.$store.commit('SET_LOADING', false);
         });
       });
 
@@ -220,10 +229,10 @@ export default {
         res.scene.position.set(data.modePosition.x, data.modePosition.y, data.modePosition.z);
         res.scene.scale.set(data.modeScale.x, data.modeScale.y, data.modeScale.z);
         this.scene.add(res.scene);
-        this.loading = false;
+        this.$store.commit('SET_LOADING', false);
       }).catch(error => {
         console.log('模型加载失败：', error);
-        this.loading = false;
+        this.$store.commit('SET_LOADING', false);
       })
     },
 
@@ -262,20 +271,27 @@ export default {
     },
 
     onWindowResize() {
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize( window.innerWidth, window.innerHeight );
+      if (this.camera) {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize( window.innerWidth, window.innerHeight );
+      }
       // labelRenderer.setSize( window.innerWidth, window.innerHeight );
     },
 
     // 点击切换模型
     async toggleModel(item, index) {
-      this.loading = true;
+      this.$store.commit('SET_LOADING', true);
       if (this.camera) {
         await this.destroyCom();
       }
       this.curActive = index;
-      this.init(item);
+      if (item.id === '04') {
+        this.isShow360House = true;
+      } else {
+        this.isShow360House = false;
+        this.init(item);
+      }
     },
 
     // 销毁场景
@@ -287,7 +303,9 @@ export default {
       this.scene.clear();
       this.scene = null;
       this.camera = null;
-      this.controls = null;
+      this.controls.reset();
+      this.controls.dispose();
+      // this.controls = null;
       document.getElementById('container').innerHTML = null;
       this.renderer = null;
     },
